@@ -35,6 +35,8 @@ namespace UserManagement.Migrations
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Designation = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    RefreshToken = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    RefreshTokenExpiry = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -166,8 +168,8 @@ namespace UserManagement.Migrations
                 columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
                 values: new object[,]
                 {
-                    { "8323af24-6de8-489a-bf8a-8f872846a666", null, "Admin", "ADMIN" },
-                    { "d651f23b-05de-4422-9020-011eb6609d27", null, "User", "USER" }
+                    { "7b3c5d4b-e7f5-4dbc-a801-643f839eb536", null, "User", "USER" },
+                    { "86d63626-4a82-4c6a-a8be-ddd262f240cd", null, "Admin", "ADMIN" }
                 });
 
             migrationBuilder.CreateIndex(

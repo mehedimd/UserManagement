@@ -13,5 +13,8 @@ namespace UserManagement.Models
 
         [Required]
         public DateTime DateOfBirth { get; set; }
+
+        public string? RefreshToken { get; set; }
+        public DateTime RefreshTokenExpiry { get; set; }
     }
 }

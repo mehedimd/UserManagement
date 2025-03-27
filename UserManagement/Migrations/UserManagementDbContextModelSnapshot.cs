@@ -51,13 +51,13 @@ namespace UserManagement.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "8323af24-6de8-489a-bf8a-8f872846a666",
+                            Id = "86d63626-4a82-4c6a-a8be-ddd262f240cd",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
-                            Id = "d651f23b-05de-4422-9020-011eb6609d27",
+                            Id = "7b3c5d4b-e7f5-4dbc-a801-643f839eb536",
                             Name = "User",
                             NormalizedName = "USER"
                         });
@@ -221,6 +221,12 @@ namespace UserManagement.Migrations
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
+
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("RefreshTokenExpiry")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
