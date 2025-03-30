@@ -19,12 +19,14 @@ namespace UserManagement.Controllers
         #region Config
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
         public readonly IConfiguration _configuration;
 
-        public AuthController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration config)
+        public AuthController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager,RoleManager<IdentityRole> roleManager, IConfiguration config)
         {
             _userManager = userManager;
             _signInManager = signInManager;
+            _roleManager = roleManager;
             _configuration = config;
         }
         #endregion
@@ -56,6 +58,15 @@ namespace UserManagement.Controllers
 
                 if (!result.Succeeded) return BadRequest(result.Errors);
 
+                // Assign role
+                if (!string.IsNullOrEmpty(vm.Role))
+                {
+                    var roleExist = await _roleManager.RoleExistsAsync(vm.Role);
+                    if (!roleExist) return BadRequest(new { message = "Role does not exist!" });
+
+                    var addToRoleResult = await _userManager.AddToRoleAsync(user, vm.Role);
+                    if (!addToRoleResult.Succeeded) return BadRequest(new { message = "Failed to assign role!" });
+                }
                 return Ok(new { message = "User registered successfully!" });
             }
             catch (Exception)
@@ -182,40 +193,30 @@ namespace UserManagement.Controllers
         }
         #endregion
 
-        //#region Get Principal From Expired Token
-        //private ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
-        //{
-        //    try
-        //    {
-        //        var secretKey = _configuration["Jwt:Secret"] ?? throw new InvalidOperationException("JWT secret key is missing!");
+        #region Get Roles
+        [HttpGet("roles")]
+        public async Task<IActionResult> GetRoles()
+        {
+            try
+            {
+                var roles = await _roleManager.Roles.ToListAsync();
 
-        //        var tokenValidationParameters = new TokenValidationParameters
-        //        {
-        //            ValidateAudience = false,
-        //            ValidateIssuer = false,
-        //            ValidateIssuerSigningKey = true,
-        //            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
-        //            ValidateLifetime = false
-        //        };
+                if (roles.Any())
+                {
+                    return Ok(roles.Select(r => r.Name)); // Return only the role names
+                }
+                else
+                {
+                    return NotFound(new { message = "No roles found." });
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the exception
+                return StatusCode(500, new { message = "An error occurred while processing your request.", details = ex.Message });
+            }
+        }
 
-        //        var tokenHandler = new JwtSecurityTokenHandler();
-        //        SecurityToken securityToken;
-        //        var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out securityToken);
-        //        var jwtSecurityToken = securityToken as JwtSecurityToken;
-
-        //        if (jwtSecurityToken == null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
-        //        {
-        //            throw new SecurityTokenException("Invalid token");
-        //        }
-        //        return principal;
-        //    }
-        //    catch (Exception)
-        //    {
-
-        //        throw;
-        //    }
-
-        //}
-        //#endregion
+        #endregion
     }
 }

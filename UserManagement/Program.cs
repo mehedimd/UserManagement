@@ -12,7 +12,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<UserManagementDbContext>(option => option.UseSqlServer(builder.Configuration.GetConnectionString("D")));
 
 // Configure Identity
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>().AddEntityFrameworkStores<UserManagementDbContext>();
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(option =>
+{
+    option.Password.RequiredLength = 6;
+    option.Password.RequireDigit = false;
+    option.Password.RequireUppercase = false;
+    option.Password.RequireLowercase = false;
+    option.Password.RequireNonAlphanumeric = false;
+
+}).AddEntityFrameworkStores<UserManagementDbContext>();
 
 // Configure CORS
 builder.Services.AddCors(policy=> policy.AddPolicy("MyPolicy",option => option.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
