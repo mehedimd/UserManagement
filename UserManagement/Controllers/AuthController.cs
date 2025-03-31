@@ -1,4 +1,4 @@
-﻿using Azure.Core;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -22,7 +22,7 @@ namespace UserManagement.Controllers
         private readonly RoleManager<IdentityRole> _roleManager;
         public readonly IConfiguration _configuration;
 
-        public AuthController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager,RoleManager<IdentityRole> roleManager, IConfiguration config)
+        public AuthController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, RoleManager<IdentityRole> roleManager, IConfiguration config)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -79,6 +79,7 @@ namespace UserManagement.Controllers
 
         #region Login
         [HttpPost("login")]
+        [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] LoginVM vm)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -95,7 +96,7 @@ namespace UserManagement.Controllers
             var refreshToken = await GenerateRefreshToken();
 
             user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
+            user.RefreshTokenExpiry = DateTime.Now.AddDays(7);
 
             await _userManager.UpdateAsync(user);
 
@@ -154,7 +155,7 @@ namespace UserManagement.Controllers
 
                 var tokenOptions = new JwtSecurityToken(
                     claims: claims,
-                    expires: DateTime.UtcNow.AddMinutes(1),
+                    expires: DateTime.Now.AddMinutes(30),
                     signingCredentials: cred
                     );
 
@@ -218,5 +219,57 @@ namespace UserManagement.Controllers
         }
 
         #endregion
+
+        #region Get Users
+        [Authorize]
+        [HttpGet("users")]
+        public async Task<IActionResult> GetUsers()
+        {
+            try
+            {
+                var users = await _userManager.Users.Select(u => new
+                {
+                    u.Id,
+                    u.Name,
+                    u.UserName,
+                    u.Email,
+                    u.DateOfBirth,
+                    u.Designation
+                }).ToListAsync();
+
+                return Ok(users);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while fetching users.", error = ex.Message });
+            }
+        }
+        #endregion
+
+        #region Delete User
+        [HttpDelete("user/delete/{id}")]
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteUser(string id)
+        {
+            try
+            {
+                var user = await _userManager.FindByIdAsync(id);
+                if (user == null)
+                    return NotFound(new { message = "User not found!" });
+
+                var result = await _userManager.DeleteAsync(user);
+                if (!result.Succeeded)
+                    return BadRequest(new { message = "Failed to delete user!", errors = result.Errors });
+
+                return Ok(new { message = "User deleted successfully!" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while deleting the user.", error = ex.Message });
+            }
+        }
+
+        #endregion
+
     }
 }

@@ -3,11 +3,13 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
 using UserManagement.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // my code 
+
 // Configure DbContext
 builder.Services.AddDbContext<UserManagementDbContext>(option => option.UseSqlServer(builder.Configuration.GetConnectionString("D")));
 
@@ -23,24 +25,36 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(option =>
 }).AddEntityFrameworkStores<UserManagementDbContext>();
 
 // Configure CORS
-builder.Services.AddCors(policy=> policy.AddPolicy("MyPolicy",option => option.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
+builder.Services.AddCors(policy=> policy.AddPolicy("MyPolicy",option => option.WithOrigins("http://localhost:4200").AllowAnyHeader().AllowAnyMethod()));
 
 // Jwt Authentication
 var secretKey = builder.Configuration["Jwt:Secret"] ?? throw new InvalidOperationException("JWT Secret key is missing!"); ;
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(option =>
+builder.Services.AddAuthentication(option =>
+{
+    option.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    option.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(option =>
 {
     option.RequireHttpsMetadata = false;
-    option.SaveToken = true;
     option.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
-        ValidateLifetime = true,
         ValidateIssuer = false,
-        ValidateAudience = false
+        ValidateAudience = false,
+        ValidateLifetime = true,
     };
 });
+
+// Configure Serilog for file logging
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
+.CreateLogger();
+
+
+// Add Serilog as the logging provider before building the host
+builder.Host.UseSerilog();  // Ensure this line comes before builder.Build()
 // my code end
 
 // Add services to the container.
@@ -58,10 +72,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else
+{
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
 
 app.UseCors("MyPolicy");
 
-app.UseHttpsRedirection();
+app.UseAuthentication();
 
 app.UseAuthorization();
 
