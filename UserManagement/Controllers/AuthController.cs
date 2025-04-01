@@ -33,6 +33,7 @@ namespace UserManagement.Controllers
 
         #region Register
         [HttpPost("register")]
+        [AllowAnonymous]
         public async Task<IActionResult> Register([FromBody] RegisterVM vm)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -155,7 +156,7 @@ namespace UserManagement.Controllers
 
                 var tokenOptions = new JwtSecurityToken(
                     claims: claims,
-                    expires: DateTime.Now.AddMinutes(30),
+                    expires: DateTime.Now.AddMinutes(1),
                     signingCredentials: cred
                     );
 
@@ -278,7 +279,7 @@ namespace UserManagement.Controllers
 
         #region Delete User
         [HttpDelete("user/delete/{id}")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteUser(string id)
         {
             try
