@@ -246,6 +246,36 @@ namespace UserManagement.Controllers
         }
         #endregion
 
+        #region Update User
+        [HttpPut("user/update/{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateUserVM vm)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            try
+            {
+                var user = await _userManager.FindByIdAsync(id);
+                if (user == null) return NotFound(new { message = "User not found!" });
+
+                // Update user properties
+                user.Name = vm.Name;
+                user.Email = vm.Email;
+                user.Designation = vm.Designation;
+
+                // Update  user in the database
+                var result = await _userManager.UpdateAsync(user);
+                if (!result.Succeeded) return BadRequest(new { message = "Failed to update user.", errors = result.Errors });
+
+                return Ok(new { message = "User updated successfully!" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while updating the user.", error = ex.Message });
+            }
+        }
+        #endregion
+
         #region Delete User
         [HttpDelete("user/delete/{id}")]
         //[Authorize(Roles = "Admin")]

@@ -25,7 +25,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(option =>
 }).AddEntityFrameworkStores<UserManagementDbContext>();
 
 // Configure CORS
-builder.Services.AddCors(policy=> policy.AddPolicy("MyPolicy",option => option.WithOrigins("http://localhost:4200").AllowAnyHeader().AllowAnyMethod()));
+builder.Services.AddCors(policy=> policy.AddPolicy("MyPolicy",option => option.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 
 // Jwt Authentication
 var secretKey = builder.Configuration["Jwt:Secret"] ?? throw new InvalidOperationException("JWT Secret key is missing!"); ;

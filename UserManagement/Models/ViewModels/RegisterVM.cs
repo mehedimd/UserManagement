@@ -10,13 +10,13 @@ namespace UserManagement.Models.ViewModels
         public string Designation { get; set; }
         [Required]
         public DateTime DateOfBirth { get; set; }
-        [EmailAddress]
         public string? Email { get; set; }
         [Required]
         public string UserName { get; set; }
         [Required]
         public string Password { get; set; }
         [Required]
+        [AllowedValues("Admin","User")]
         public string Role { get; set; }
     }
 }
