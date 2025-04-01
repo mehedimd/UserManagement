@@ -156,7 +156,7 @@ namespace UserManagement.Controllers
 
                 var tokenOptions = new JwtSecurityToken(
                     claims: claims,
-                    expires: DateTime.Now.AddMinutes(1),
+                    expires: DateTime.Now.AddMinutes(30),
                     signingCredentials: cred
                     );
 
