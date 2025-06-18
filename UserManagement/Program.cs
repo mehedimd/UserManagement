@@ -9,6 +9,8 @@ using UserManagement.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 // my code 
+// Configure In Memory Cache
+builder.Services.AddMemoryCache();
 
 // Configure DbContext
 builder.Services.AddDbContext<UserManagementDbContext>(option => option.UseSqlServer(builder.Configuration.GetConnectionString("D")));

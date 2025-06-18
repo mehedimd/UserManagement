@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -21,13 +22,15 @@ namespace UserManagement.Controllers
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         public readonly IConfiguration _configuration;
-
-        public AuthController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, RoleManager<IdentityRole> roleManager, IConfiguration config)
+        private readonly IMemoryCache _cache;
+        private const string UserListCacheKey = "UserListCache";
+        public AuthController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, RoleManager<IdentityRole> roleManager, IConfiguration config, IMemoryCache cache)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _roleManager = roleManager;
             _configuration = config;
+            _cache = cache;
         }
         #endregion
 
@@ -222,21 +225,53 @@ namespace UserManagement.Controllers
         #endregion
 
         #region Get Users
+        //[Authorize]
+        //[HttpGet("users")]
+        //public async Task<IActionResult> GetUsers()
+        //{
+        //    try
+        //    {
+        //        var users = await _userManager.Users.Select(u => new
+        //        {
+        //            u.Id,
+        //            u.Name,
+        //            u.UserName,
+        //            u.Email,
+        //            u.DateOfBirth,
+        //            u.Designation
+        //        }).ToListAsync();
+
+        //        return Ok(users);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, new { message = "An error occurred while fetching users.", error = ex.Message });
+        //    }
+        //}
+
+        // -- Implement 
         [Authorize]
         [HttpGet("users")]
         public async Task<IActionResult> GetUsers()
         {
             try
             {
-                var users = await _userManager.Users.Select(u => new
+                if (!_cache.TryGetValue(UserListCacheKey, out List<object>? users))
                 {
-                    u.Id,
-                    u.Name,
-                    u.UserName,
-                    u.Email,
-                    u.DateOfBirth,
-                    u.Designation
-                }).ToListAsync();
+                    users = await _userManager.Users.Select(u => new
+                    {
+                        u.Id,
+                        u.Name,
+                        u.UserName,
+                        u.Email,
+                        u.DateOfBirth,
+                        u.Designation
+                    }).Cast<object>().ToListAsync();
+
+                    var cacheOptions = new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromMinutes(2));
+
+                    _cache.Set(UserListCacheKey, users, cacheOptions);
+                }
 
                 return Ok(users);
             }
